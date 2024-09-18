@@ -5,12 +5,15 @@ services:
     ports:
       - "38500:5000"
     environment:
-      - FLASK_ENV=production  # Configura el entorno para producción
-    restart: unless-stopped  # Reinicia el contenedor si falla
-    volumes:
-      - ./config.yaml:/app/config.yaml  # Monta el archivo de configuración YAML en el contenedor
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - FLASK_ENV=production
+      - PRINTER_TYPE=network
+      - NETWORK_IP=172.20.64.30
+      - NETWORK_PORT=9100
+      - USB_VENDOR=0x04b8
+      - USB_PRODUCT=0x0e2a
+    restart: unless-stopped
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "10m"
+#        max-file: "3"

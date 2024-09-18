@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
-from escpos.printer import Network, Usb
+import os
 import yaml
 import base64
 import requests
+from flask import Flask, request, jsonify
+from escpos.printer import Network, Usb
 from io import BytesIO
 from PIL import Image
 
@@ -11,10 +12,15 @@ MAX_IMAGE_WIDTH = 576
 
 class EpsonPrinter:
     def __init__(self, config_file='config.yaml'):
-        self.config = self.load_config(config_file)
+        # Verificar si config_file es un diccionario o una cadena (ruta del archivo)
+        if isinstance(config_file, dict):
+            self.config = config_file  # Si es un diccionario, se usa como configuración directamente
+        else:
+            self.config = self.load_config(config_file)  # Si es una ruta de archivo, cargar el archivo YAML
         self.printer = None
 
     def load_config(self, config_file):
+        # Carga la configuración desde un archivo YAML.
         try:
             with open(config_file, 'r') as f:
                 return yaml.safe_load(f)
@@ -22,6 +28,7 @@ class EpsonPrinter:
             raise FileNotFoundError(f"Could not load config file: {e}")
 
     def connect(self):
+        # Conecta la impresora según la configuración cargada.
         try:
             printer_type = self.config['printer']['type']
             if printer_type == "network":
@@ -139,14 +146,34 @@ class EpsonPrinter:
 class PrinterAPI:
     def __init__(self, config_file='config.yaml'):
         self.app = Flask(__name__)
-        self.printer = EpsonPrinter(config_file)
+        self.config = self.load_config(config_file)
+        self.printer = EpsonPrinter(self.config)
         self.setup_routes()
 
+    def load_config(self, config_file):
+        """
+        Load configuration from YAML file and environment variables.
+        """
+        config = {}
+
+        # Load the configuration from YAML file
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as file:
+                config = yaml.safe_load(file)
+
+        # Override with environment variables if they exist
+        config['printer_type'] = os.getenv('PRINTER_TYPE', config.get('printer', {}).get('type', 'network'))
+        config['network_ip'] = os.getenv('NETWORK_IP', config.get('printer', {}).get('network', {}).get('ip_address', 'localhost'))
+        config['network_port'] = os.getenv('NETWORK_PORT', config.get('printer', {}).get('network', {}).get('port', 9100))
+        config['usb_vendor'] = os.getenv('USB_VENDOR', config.get('printer', {}).get('usb', {}).get('idVendor', 0x04b8))
+        config['usb_product'] = os.getenv('USB_PRODUCT', config.get('printer', {}).get('usb', {}).get('idProduct', 0x0e15))
+
+        return config
+
     def setup_routes(self):
-        # Check API health
         @self.app.route('/')
         def home():
-            return "Epson TM-m30ii API with support for QR codes, barcodes, and images"
+            return f"Epson TM-m30ii API - Printer type: {self.config['printer_type']}"
 
         # Print text
         @self.app.route('/print', methods=['POST'])
