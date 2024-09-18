@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermal Printer Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Thermal Printer API Control</h1>
+
+        <!-- Section for Text Printing -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h4>Print Text</h4>
+                <div class="form-group">
+                    <textarea id="print-text" class="form-control" rows="3" placeholder="Enter text to print"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="printText()">Print Text</button>
+            </div>
+        </div>
+
+        <!-- Section for QR Code Printing -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h4>Print QR Code</h4>
+                <div class="form-group">
+                    <input type="text" id="qr-data" class="form-control" placeholder="Enter data for QR code">
+                </div>
+                <button class="btn btn-primary" onclick="printQR()">Print QR Code</button>
+            </div>
+        </div>
+
+        <!-- Section for Image Printing -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h4>Print Image from URL</h4>
+                <div class="form-group">
+                    <input type="text" id="image-url" class="form-control" placeholder="Enter image URL">
+                </div>
+                <button class="btn btn-primary" onclick="printImage()">Print Image</button>
+            </div>
+        </div>
+
+        <!-- Section for Barcode Printing -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h4>Print Barcode</h4>
+                <div class="form-group">
+                    <input type="text" id="barcode-data" class="form-control" placeholder="Enter barcode data">
+                </div>
+                <button class="btn btn-primary" onclick="printBarcode()">Print Barcode</button>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="mt-4" id="result"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
