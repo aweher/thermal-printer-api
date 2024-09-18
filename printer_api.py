@@ -202,7 +202,7 @@ class PrinterAPI:
                 if not qr_data:
                     return jsonify({"status": "error", "message": "'data' field is required for QR"}), 400
                 
-                if self.printer.print_qr(qr_data):
+                if self.printer.print_qr(qr_data, size=500):
                     return jsonify({"status": "success", "message": "QR code printed successfully"})
                 else:
                     return jsonify({"status": "error", "message": "Failed to print QR code"})
