@@ -1,0 +1,16 @@
+---
+services:
+  epson-api:
+    image: registry.ayuda.la/public/thermal-printer-api:latest
+    ports:
+      - "38500:5000"
+    environment:
+      - FLASK_ENV=production  # Configura el entorno para producción
+    restart: unless-stopped  # Reinicia el contenedor si falla
+    volumes:
+      - ./config.yaml:/app/config.yaml  # Monta el archivo de configuración YAML en el contenedor
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

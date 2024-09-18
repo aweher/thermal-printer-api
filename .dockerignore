@@ -1,0 +1,7 @@
+Makefile
+README.md
+LICENSE
+docker-compose.yml
+build.sh
+config.*
+Dockerfile
