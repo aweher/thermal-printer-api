@@ -4,16 +4,18 @@ services:
     image: registry.ayuda.la/public/thermal-printer-api:latest
     ports:
       - "38500:5000"
+    volumes:
+      - ./config.yaml:/app/config.yaml
     environment:
       - FLASK_ENV=production
-      - PRINTER_TYPE=network
-      - NETWORK_IP=172.20.64.30
-      - NETWORK_PORT=9100
-      - USB_VENDOR=0x04b8
-      - USB_PRODUCT=0x0e2a
+#      - PRINTER_TYPE=network
+#      - NETWORK_IP=172.20.64.30
+#      - NETWORK_PORT=9100
+#      - USB_VENDOR=0x04b8
+#      - USB_PRODUCT=0x0e2a
     restart: unless-stopped
-#    logging:
-#      driver: "json-file"
-#      options:
-#        max-size: "10m"
-#        max-file: "3"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
