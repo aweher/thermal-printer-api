@@ -1,0 +1,8 @@
+Flask
+python-escpos
+Pillow
+qrcode
+python-barcode
+pyusb
+pyyaml
+requests

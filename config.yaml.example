@@ -1,0 +1,8 @@
+printer:
+  type: network  # Can be "network" or "usb"
+  network:
+    ip_address: "192.168.X.Y"
+    port: 9100
+  usb:
+    idVendor: 0x04b8  # Epson
+    idProduct: 0x0e2a  # TM-M30II
