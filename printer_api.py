@@ -2,6 +2,7 @@ import os
 import yaml
 import base64
 import requests
+import qrcode
 from flask import Flask, request, jsonify
 from escpos.printer import Network, Usb
 from io import BytesIO
@@ -201,8 +202,29 @@ class PrinterAPI:
 
                 if not qr_data:
                     return jsonify({"status": "error", "message": "'data' field is required for QR"}), 400
-                
-                if self.printer.print_qr(qr_data, size=500):
+
+                # Generar código QR
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(qr_data)
+                qr.make(fit=True)
+
+                # Convertir a imagen Pillow
+                qr_image = qr.make_image(fill='black', back_color='white')
+
+                # Redimensionar la imagen al ancho máximo de la impresora (576px)
+                max_width = 576  # Ancho máximo para 80mm de papel
+                qr_image = qr_image.resize((max_width, max_width), Image.ANTIALIAS)
+
+                # Convertir la imagen al formato requerido por la impresora
+                qr_image.save("/tmp/qr_code.png")
+
+                # Enviar la imagen a la impresora
+                if self.printer.print_image("/tmp/qr_code.png"):
                     return jsonify({"status": "success", "message": "QR code printed successfully"})
                 else:
                     return jsonify({"status": "error", "message": "Failed to print QR code"})
