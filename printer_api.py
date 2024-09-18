@@ -171,7 +171,7 @@ class PrinterAPI:
         return config
 
     def setup_routes(self):
-        @self.app.route('/')
+        @self.app.route('/status')
         def home():
             return f"Epson TM-m30ii API - Printer type: {self.config['printer_type']}"
 
