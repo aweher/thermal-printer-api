@@ -3,4 +3,4 @@ from printer_api import PrinterAPI
 
 printer_api = PrinterAPI()
 
-app = printer_api.app()
+app = printer_api.app
