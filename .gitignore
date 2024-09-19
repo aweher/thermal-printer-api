@@ -163,3 +163,4 @@ cython_debug/
 .venv-*/
 .vscode/
 config.yaml
+logs/*.log
