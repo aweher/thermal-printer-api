@@ -2,6 +2,7 @@ import os
 import yaml
 import base64
 import requests
+import logging
 from flask import Flask, request, jsonify
 from escpos.printer import Network, Usb
 from io import BytesIO
@@ -12,39 +13,56 @@ MAX_IMAGE_WIDTH = 576
 
 class EpsonPrinter:
     def __init__(self, config_file='config.yaml'):
+        # Configurar logging
+        self.logger = logging.getLogger('EpsonPrinter')
+        handler = logging.FileHandler('logs/epson_printer.log')
+        handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+        
         # Verificar si config_file es un diccionario o una cadena (ruta del archivo)
         if isinstance(config_file, dict):
-            self.config = config_file  # Si es un diccionario, se usa como configuración directamente
+            self.config = config_file  
         else:
-            self.config = self.load_config(config_file)  # Si es una ruta de archivo, cargar el archivo YAML
+            self.config = self.load_config(config_file)
         self.printer = None
 
     def load_config(self, config_file):
-        # Carga la configuración desde un archivo YAML.
         try:
             with open(config_file, 'r') as f:
                 return yaml.safe_load(f)
         except Exception as e:
+            self.logger.error(f"Error loading config file: {e}")
             raise FileNotFoundError(f"Could not load config file: {e}")
 
     def connect(self):
-        # Conecta la impresora según la configuración cargada.
         try:
             printer_type = self.config['printer']['type']
             if printer_type == "network":
                 ip_address = self.config['printer']['network']['ip_address']
                 port = self.config['printer']['network']['port']
                 self.printer = Network(ip_address, port)
-                print(f"Connected to network printer at {ip_address}:{port}")
+                self.logger.info(f"Connected to network printer at {ip_address}:{port}")
             elif printer_type == "usb":
                 id_vendor = self.config['printer']['usb']['idVendor']
                 id_product = self.config['printer']['usb']['idProduct']
                 self.printer = Usb(id_vendor, id_product)
-                print(f"Connected to USB printer with Vendor ID: {id_vendor}, Product ID: {id_product}")
+                self.logger.info(f"Connected to USB printer with Vendor ID: {id_vendor}, Product ID: {id_product}")
             else:
                 raise ValueError("Unsupported printer type in configuration.")
         except Exception as e:
-            raise ConnectionError(f"Error connecting to the printer: {e}")
+            self.logger.error(f"Error connecting to printer: {e}")
+            raise ConnectionError(f"Connection error: {e}")
+
+    def disconnect(self):
+        try:
+            if self.printer is not None:
+                self.printer.close()
+                self.logger.info("Printer connection closed.")
+            else:
+                self.logger.warning("Attempted to close printer connection, but printer is not connected.")
+        except Exception as e:
+            self.logger.error(f"Error disconnecting from printer: {e}")
 
     def resize_image_for_printer(self, image):
         """Resize the image to fit the printer's width, if necessary."""
@@ -62,86 +80,99 @@ class EpsonPrinter:
         try:
             if self.printer is None:
                 self.connect()
-
-            # Print text
+            
             self.printer.text(text)
-            self.printer.cut()  # Cut paper after printing
+            self.printer.cut()
+            self.logger.info(f"Text printed: {text}")
             return True
         except Exception as e:
-            print(f"Error printing text: {e}")
+            self.logger.error(f"Error printing text: {e}")
             return False
+        finally:
+            self.disconnect()
 
     def print_qr(self, data):
         try:
             if self.printer is None:
                 self.connect()
 
-            # Print QR code
             self.printer.qr(data)
             self.printer.cut()
+            self.logger.info(f"QR code printed: {data}")
             return True
         except Exception as e:
-            print(f"Error printing QR code: {e}")
+            self.logger.error(f"Error printing QR code: {e}")
             return False
+        finally:
+            self.disconnect()
 
     def print_barcode(self, data):
         try:
             if self.printer is None:
                 self.connect()
 
-            # Print barcode
             self.printer.barcode(data, "EAN13", 64, 2, '', '')
             self.printer.cut()
+            self.logger.info(f"Barcode printed: {data}")
             return True
         except Exception as e:
-            print(f"Error printing barcode: {e}")
+            self.logger.error(f"Error printing barcode: {e}")
             return False
+        finally:
+            self.disconnect()
 
     def print_image(self, image_data):
         try:
             if self.printer is None:
                 self.connect()
 
-            # Decode image from base64
-            try:
-                image = Image.open(BytesIO(base64.b64decode(image_data)))
-            except Exception as e:
-                raise ValueError("Error decoding image. Ensure it's base64-encoded.")
+            image = Image.open(BytesIO(base64.b64decode(image_data)))
 
-            # Redimensionar la imagen si es necesario
-            image = self.resize_image_for_printer(image)
+            image = self.resize_image(image)
 
-            # Print the image
             self.printer.image(image)
             self.printer.cut()
+            self.logger.info("Image printed.")
             return True
         except Exception as e:
-            print(f"Error printing image: {e}")
+            self.logger.error(f"Error printing image: {e}")
             return False
+        finally:
+            self.disconnect()
+    
+    def resize_image(self, image):
+        try:
+            width_percent = (MAX_IMAGE_WIDTH / float(image.size[0]))
+            height_size = int((float(image.size[1]) * float(width_percent)))
+            resized_image = image.resize((MAX_IMAGE_WIDTH, height_size), Image.Resampling.LANCZOS)
+            return resized_image
+        except Exception as e:
+            self.logger.error(f"Error resizing image: {e}")
+            raise RuntimeError(f"Failed to resize image: {e}")
 
     def print_image_from_url(self, image_url):
         try:
             if self.printer is None:
                 self.connect()
 
-            # Download the image from the URL
             response = requests.get(image_url)
             if response.status_code != 200:
-                raise ValueError("Failed to download image from the URL")
+                self.logger.error(f"Failed to download image from URL: {image_url}")
+                return False
 
-            # Open the image
             image = Image.open(BytesIO(response.content))
 
-            # Redimensionar la imagen si es necesario
-            image = self.resize_image_for_printer(image)
+            image = self.resize_image(image)
 
-            # Print the image
             self.printer.image(image)
             self.printer.cut()
+            self.logger.info(f"Image printed from URL: {image_url}")
             return True
         except Exception as e:
-            print(f"Error printing image from URL: {e}")
+            self.logger.error(f"Error printing image from URL: {e}")
             return False
+        finally:
+            self.disconnect()
 
 class PrinterAPI:
     def __init__(self, config_file='config.yaml'):
