@@ -1,3 +1,4 @@
+---
 printer:
   type: network  # Can be "network" or "usb"
   network:
@@ -6,3 +7,5 @@ printer:
   usb:
     idVendor: 0x04b8  # Epson
     idProduct: 0x0e2a  # TM-M30II
+upload_folder: './uploads'
+paper_width_mm: 80

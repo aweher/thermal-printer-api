@@ -3,7 +3,9 @@ import yaml
 import base64
 import requests
 import logging
-from flask import Flask, request, jsonify
+import tempfile
+from flask import Flask, request, jsonify, render_template
+from werkzeug.utils import secure_filename
 from escpos.printer import Network, Usb
 from io import BytesIO
 from PIL import Image
@@ -126,11 +128,14 @@ class EpsonPrinter:
             if self.printer is None:
                 self.connect()
 
-            image = Image.open(BytesIO(base64.b64decode(image_data)))
+            # Crear un archivo temporal para almacenar la imagen
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_image_file:
+                temp_image_file.write(image_data)
+                temp_image_file.flush()
 
-            image = self.resize_image(image)
+                # Pasar la ruta del archivo temporal a la impresora
+                self.printer.image(temp_image_file.name)
 
-            self.printer.image(image)
             self.printer.cut()
             self.logger.info("Image printed.")
             return True
@@ -179,6 +184,9 @@ class PrinterAPI:
         self.app = Flask(__name__)
         self.config = self.load_config(config_file)
         self.printer = EpsonPrinter(self.config)
+        self.upload_folder = os.getenv('UPLOAD_FOLDER', self.printer.config.get('upload_folder', './uploads'))
+        if not os.path.exists(self.upload_folder):
+            os.makedirs(self.upload_folder)
         self.setup_routes()
 
     def load_config(self, config_file):
@@ -202,6 +210,46 @@ class PrinterAPI:
         return config
 
     def setup_routes(self):
+        @self.app.route('/')
+        def siteindex():
+            return render_template('index.html')
+        
+        @self.app.route('/print/upload-image', methods=['POST'])
+        def upload_image():
+            try:
+                if 'image' not in request.files:
+                    return jsonify({"status": "error", "message": "No file part"}), 400
+                
+                file = request.files['image']
+                if file.filename == '':
+                    return jsonify({"status": "error", "message": "No selected file"}), 400
+
+                # Asegurar que el archivo tiene un nombre seguro
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(self.upload_folder, filename)
+                file.save(file_path)
+
+                # Abrir la imagen para enviarla a la impresora
+                with open(file_path, 'rb') as img_file:
+                    img = Image.open(img_file)
+
+                    # Redimensionar la imagen si es necesario
+                    img = self.printer.resize_image(img)
+                    
+                    # Convertir la imagen en bytes
+                    img_bytes = BytesIO()
+                    img.save(img_bytes, format='PNG')
+                    img_bytes = img_bytes.getvalue()
+                    
+                    # Imprimir la imagen
+                    if self.printer.print_image(img_bytes):
+                        return jsonify({"status": "success", "message": "Image printed successfully"})
+                    else:
+                        return jsonify({"status": "error", "message": "Failed to print image"})
+
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)})
+
         @self.app.route('/status')
         def home():
             return f"Epson TM-m30ii API - Printer type: {self.config['printer_type']}"

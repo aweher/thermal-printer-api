@@ -73,3 +73,25 @@ function printBarcode() {
         document.getElementById('result').innerText = `Error: ${error}`;
     });
 }
+
+// Función para imprimir imagen
+
+document.getElementById('image-upload-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('image-file');
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+
+    fetch('/print/upload-image', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('result').innerText = data.message;
+    })
+    .catch(error => {
+        document.getElementById('result').innerText = `Error: ${error}`;
+    });
+});

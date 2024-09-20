@@ -65,6 +65,21 @@
             </div>
         </div>
 
+    <!-- Añadir una nueva sección para la carga de imágenes -->
+    <div class="card mt-3 shadow">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">Upload Image and Print</h4>
+        </div>
+        <div class="card-body">
+            <form id="image-upload-form">
+                <div class="form-group">
+                    <input type="file" id="image-file" name="image" class="form-control" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-warning mt-3">Upload and Print Image</button>
+            </form>
+        </div>
+    </div>    
+
         <!-- Result Section -->
         <div class="mt-4" id="result"></div>
     </div>
