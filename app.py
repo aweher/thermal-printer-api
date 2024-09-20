@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-from flask import render_template
+# -*- coding: utf-8 -*-
 from printer_api import PrinterAPI
 
 # Instanciar PrinterAPI
