@@ -12,7 +12,8 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center mb-4">Thermal Printer API Control</h1>
-
+        <!-- Result Section -->
+        <div class="mt-4" id="result"></div>
         <!-- Section for Text Printing -->
         <div class="card mt-3 shadow">
             <div class="card-header bg-primary text-white">
@@ -42,6 +43,21 @@
         <!-- Section for Image Printing -->
         <div class="card mt-3 shadow">
             <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">Upload Image and Print</h4>
+            </div>
+            <div class="card-body">
+                <form id="image-upload-form">
+                    <div class="form-group">
+                        <input type="file" id="image-file" name="image" class="form-control" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-warning mt-3">Upload and Print Image</button>
+                </form>
+            </div>
+        </div>        
+
+        <!-- Section for Image from URL Printing -->
+        <div class="card mt-3 shadow">
+            <div class="card-header bg-warning text-dark">
                 <h4 class="mb-0">Print Image from URL</h4>
             </div>
             <div class="card-body">
@@ -64,24 +80,6 @@
                 <button class="btn btn-info mt-3" onclick="printBarcode()">Print Barcode</button>
             </div>
         </div>
-
-    <!-- Añadir una nueva sección para la carga de imágenes -->
-    <div class="card mt-3 shadow">
-        <div class="card-header bg-warning text-dark">
-            <h4 class="mb-0">Upload Image and Print</h4>
-        </div>
-        <div class="card-body">
-            <form id="image-upload-form">
-                <div class="form-group">
-                    <input type="file" id="image-file" name="image" class="form-control" accept="image/*">
-                </div>
-                <button type="submit" class="btn btn-warning mt-3">Upload and Print Image</button>
-            </form>
-        </div>
-    </div>    
-
-        <!-- Result Section -->
-        <div class="mt-4" id="result"></div>
     </div>
 
     <!-- Bootstrap 5 JS -->
